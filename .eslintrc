@@ -1,0 +1,25 @@
+{
+  "env": {
+    "node" : true,
+    "browser" : true
+  },
+  "ecmaFeatures" : {
+    "jsx": true,
+    "objectLiteralShorthandMethods" : true
+  },
+  "plugins": [
+    "react"
+  ],
+  "parser": "babel-eslint",
+  "rules": {
+    "react/display-name": 1,
+    "semi" : [0 , "never"],
+    "strict" : 0,
+    "key-spacing" : [2, {
+      "beforeColon" : true,
+      "afterColon" : true
+    }],
+    "no-unused-vars": [1, {"vars" : "all", "args" : "after-used"} ],
+    "no-comma-dangle" : 0
+  }
+}
