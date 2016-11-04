@@ -46,7 +46,8 @@ class Model{
   }
 
   set(data){
-    const promise = this.client.hsetAsync(`${this.db}:${this.table}`, this.id, data);
+    this.data = data;
+    return this.next(Promise.resolve(data));
   }
 
   save(){
