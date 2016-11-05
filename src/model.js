@@ -1,111 +1,151 @@
+import Promise from "bluebird"
 import pluralize from "pluralize"
 
-//instance.children -> Child.get({ instance_id : instance.id })
-//User.find(id)
-//User.findByHoge(hoge);
-//Modelにパラメータを渡すとインスタンスが出る
+/**@param {Obejct} config
+ * {
+ *    client : RedisClient,
+ *    db : dbName,
+ *    table : tableName,
+ *    schema : {
+ *      columnName : { type : "number", }
+ *    },
+ *    relations : {
+ *      hasMany : [],
+ *      belongsTo : []
+ *    }
+ * }
+ */
 
-//let par = Parent.find(parId);
-//par.children
 
-
-class Model{
+export default class Model{
   constructor(config){
+    this.client = config.client;
     this.db = config.db;
     this.table = config.table;
-    this.client = config.client;
-    this.promises = null;
+    this.config = config;
   }
 
-  then(cb){
-    const promise = this.promise;
-    this.promise = null;
-    return promise.then(cb);
-  }
-
-  next(promise){
-    this.promise.then(function(promise){ this.promise = promise; }.bind(this, promise));
-    return this;
-  }
-
-  find(id){
-    const promise = this.client.hgetAsync(`${this.db}:${this.table}`, id)
-      .then((data) => {
-        if(data){
-          this.id = id;
-          this.data = data;
-        }
-        return this;
-      })
-    return this.next(promise);
+  make(params){
+    const instance = new Instance(this.config, params);
+    return instance;
   }
   
-  get(){
-    const promise = Promise.resolve(this.data);
-    return this.next(promise);
+  find(id) {
+    const promise = this.client.hgetAsync(`${this.db}:${this.table}`, id)
+      .then((paramsJSON) => {
+        if (paramsJSON) return new Instance(this.config, JSON.parse(paramsJSON));
+        return null;
+      });
+    return promise;
   }
 
-  set(data){
-    this.data = data;
-    return this.next(Promise.resolve(data));
+  findBy(column, value){
+    const promise = this.client.hgetallAsync(`${this.db}:${this.table}`)
+      .then((hashMap) => {
+        const ids = Object.keys(hashMap);
+        let id, params;
+        for(let i=0; i<ids.length; i++){
+          id = ids[i];
+          params = JSON.parse(hashMap[id]);
+          if(params[column] === value) return new Instance(this.config, params);
+        }
+      });
+    return promise;
   }
 
-  save(){
-    let promise;
-    if(this.id && this.data){
-      promise = this.client.hsetAsync(`${this.db}:${this.table}`, this.id, this.data)
-    }else if(this.data){
-      promise = this.client.incrbyAsync(`count@${this.db}:${this.table}`)
-        .then((id) => {
-          this.id = id;
-          return this.client.hsetAsync(`${this.db}:${this.table}`, this.id, this.data)
-        });
-    }else{
-      promise = Promise.reject("data is not defined");
-    }
-    return this.next(promise);
+  findAllBy(column, value){
+    const condition = function(column, value, params){
+      return params[column] === value;
+    }.bind(this, column, value);
+    const promise = this.where(condition);
+    return promise;
   }
 
-  findChild(id, Child){
-    const child = new Child();
-    this.client.hgetAsync(`${child.db}:${child.table}_belongsTo_${this.table}`)
-    .then((c2pJSON) => {
-      const c2p = JSON.parse(c2pJSON);
-      Object.keys(c2p).map((cid) => { 
-        return c2p[cid];
-      })
-    })
-    //childのid->parentのidというリンク
-  }
-
-  findParent(Parent){
-    const parent = new Parent();
-    const promise = parent.find(this.data.parentId);
-    return this.next(promise);
+  where(condition){
+    const promise = this.client.hgetallAsync(`${this.db}:${this.table}`)
+      .then((hashMap) => {
+        const ids = Object.keys(hashMap);
+        const instances = [];
+        let id, params, instance;
+        for(let i=0; i<ids.length; i++){
+          id = ids[i];
+          params = JSON.parse(hashMap[id]);
+          if(condition(params)){
+            instance = new Instance(this.config, params);
+            instances.push(instance);
+          }
+        }
+        return instances;
+      });
+    return promise;
   }
 }
 
 
-class ModelFactory{
-  constructor(){
-    
+class Instance{
+  constructor(config, params){
+    this.client = config.client;
+    this.db = config.db;
+    this.table = config.table;
+    if(config.schema) this._setSchema(config.schema);
+    if(config.relations) this._setRelations(config.relations);
+ 
+    this.params = params || {}; 
   }
 
-  generate(config){
-    const NewModel = function(params){}
-    NewModel.name = config.name;
-    NewModel.scheme = config.scheme;
-    NewModel = this.setHasMany(NewModel, config.setHasMany);
+  _setSchema(schema={}){}
+
+  _setRelations(relations={}){
+    if(!!relations.hasMany) this.setHasMany(relations.hasMany);
+    if(!!relations.belongsTo) this.setBelongsTo(relations.belongsTo);
   }
 
-  setHasMany(model, childModels){
-    childModels.forEach((childModel) => {
-      const key = pluralize.plune(childModel.name);
-      model[key] = childModel.find
+  _setHasMany(ChildList){
+    ChildList.forEach((Child) => {
+      const childrenKey = pluralize.plural(Child.table); 
+      this[childrenKey] = this._findChildren.bind(this, Child);
     });
   }
 
-  setBelongsTo(models){
-    
+  _setBelongsTo(ParentList){
+    ParentList.forEach((Parent) => {
+      const parentKey = Parent.table;
+      this[parentKey] = this._findParent.bind(this, Parent);
+    });
+  }
+
+  _findChildren(Child){
+    const column = `${this.table}_id`;
+    const value = this.params.id;
+    const promise = Child.findAllBy(column, value)
+    return promise;
+  }
+
+  _findParent(Parent){
+    const column = `${Parent.table}_id`;
+    const promise = Parent.find(this.params[column]);
+    return promise;
+  }
+
+  setParams(paramsChange={}){
+    this.params = Object.assign(this.params, paramsChange);
+    return this;
+  }
+
+  save(){
+    let promise;
+    //TODO: validate params by schema
+    if(this.params.id && this.params){
+      promise = this.client.hsetAsync(`${this.db}:${this.table}`, this.params.id, this.params)
+    }else if(this.params){
+      promise = this.client.incrAsync(`count@${this.db}:${this.table}`)
+        .then((id) => {
+          this.setParams({ id : id });
+          return this.client.hsetAsync(`${this.db}:${this.table}`, this.params.id, JSON.stringify(this.params));
+        })
+    }else{
+      promise = Promise.reject("params is not defined");
+    }
+    return promise;
   }
 }

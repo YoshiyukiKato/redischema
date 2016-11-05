@@ -1,18 +1,12 @@
 {
   "env": {
-    "node" : true,
-    "browser" : true
+    "node" : true
   },
   "ecmaFeatures" : {
-    "jsx": true,
     "objectLiteralShorthandMethods" : true
   },
-  "plugins": [
-    "react"
-  ],
   "parser": "babel-eslint",
   "rules": {
-    "react/display-name": 1,
     "semi" : [0 , "never"],
     "strict" : 0,
     "key-spacing" : [2, {
