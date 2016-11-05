@@ -4,12 +4,13 @@ import pluralize from "pluralize"
 export default class Model{
   /**@param { 
    *  client: RedisClient,
-   *  table : string, 
    *  db : string,
+   *  table : string, 
    *  paramTypes : { paramName : TypeValidator({constraints}) }, //TODO
    *  relations : { hasMany : [Model] , belongsTo : [Model] }
    * } config
   */  
+
   constructor(config){
     this.client = config.client;
     this.db = config.db;
@@ -79,7 +80,7 @@ class Instance{
     this.client = config.client;
     this.db = config.db;
     this.table = config.table;
-    if(config.schema) this._setSchema(config.schema);
+    if(config.paramTypes) this._setTypeValidator(config.paramTypes);
     if(config.relations) this._setRelations(config.relations);
  
     this.params = params || {}; 
@@ -130,7 +131,7 @@ class Instance{
     if(this.params.id && this.params){
       promise = this.client.hsetAsync(`${this.db}:${this.table}`, this.params.id, this.params)
     }else if(this.params){
-      promise = this.client.incrAsync(`count@${this.db}:${this.table}`)
+      promise = this.client.incrAsync(`index@${this.db}:${this.table}`)
         .then((id) => {
           this.setParams({ id : id });
           return this.client.hsetAsync(`${this.db}:${this.table}`, this.params.id, JSON.stringify(this.params));

@@ -21,12 +21,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 var Model = function () {
   /**@param { 
    *  client: RedisClient,
-   *  table : string, 
    *  db : string,
+   *  table : string, 
    *  paramTypes : { paramName : TypeValidator({constraints}) }, //TODO
    *  relations : { hasMany : [Model] , belongsTo : [Model] }
    * } config
   */
+
   function Model(config) {
     _classCallCheck(this, Model);
 
@@ -116,7 +117,7 @@ var Instance = function () {
     this.client = config.client;
     this.db = config.db;
     this.table = config.table;
-    if (config.schema) this._setSchema(config.schema);
+    if (config.paramTypes) this._setTypeValidator(config.paramTypes);
     if (config.relations) this._setRelations(config.relations);
 
     this.params = params || {};
@@ -188,7 +189,7 @@ var Instance = function () {
       if (this.params.id && this.params) {
         promise = this.client.hsetAsync(this.db + ":" + this.table, this.params.id, this.params);
       } else if (this.params) {
-        promise = this.client.incrAsync("count@" + this.db + ":" + this.table).then(function (id) {
+        promise = this.client.incrAsync("index@" + this.db + ":" + this.table).then(function (id) {
           _this6.setParams({ id: id });
           return _this6.client.hsetAsync(_this6.db + ":" + _this6.table, _this6.params.id, JSON.stringify(_this6.params));
         });
