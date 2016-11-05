@@ -1,2 +1,2 @@
-import redorm from "./redorm"
-export default redorm
+import Model from "./model"
+export default { Model };

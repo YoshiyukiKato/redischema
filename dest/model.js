@@ -18,22 +18,15 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-/**@param {Obejct} config
- * {
- *    client : RedisClient,
- *    db : dbName,
- *    table : tableName,
- *    schema : {
- *      columnName : { type : "number", }
- *    },
- *    relations : {
- *      hasMany : [],
- *      belongsTo : []
- *    }
- * }
- */
-
 var Model = function () {
+  /**@param { 
+   *  client: RedisClient,
+   *  table : string, 
+   *  db : string,
+   *  paramTypes : { paramName : TypeValidator({constraints}) }, //TODO
+   *  relations : { hasMany : [Model] , belongsTo : [Model] }
+   * } config
+  */
   function Model(config) {
     _classCallCheck(this, Model);
 
@@ -130,9 +123,9 @@ var Instance = function () {
   }
 
   _createClass(Instance, [{
-    key: "_setSchema",
-    value: function _setSchema() {
-      var schema = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    key: "_setValidator",
+    value: function _setValidator() {
+      var paramTypes = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
     }
   }, {
     key: "_setRelations",
@@ -191,7 +184,7 @@ var Instance = function () {
       var _this6 = this;
 
       var promise = void 0;
-      //TODO: validate params by schema
+      //TODO: validate params
       if (this.params.id && this.params) {
         promise = this.client.hsetAsync(this.db + ":" + this.table, this.params.id, this.params);
       } else if (this.params) {

@@ -1,7 +1,7 @@
 {
-  "name": "redorm",
+  "name": "redischema",
   "version": "0.0.1",
-  "description": "",
+  "description": "Simple data model for redis",
   "main": "index.js",
   "scripts": {
     "test": "mocha --compilers js:babel-register test/*.test.js"

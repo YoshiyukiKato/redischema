@@ -3,9 +3,10 @@ import pluralize from "pluralize"
 
 export default class Model{
   /**@param { 
-   *  client: string, 
+   *  client: RedisClient,
+   *  table : string, 
    *  db : string,
-   *  schema : { typeName : {} },
+   *  paramTypes : { paramName : TypeValidator({constraints}) }, //TODO
    *  relations : { hasMany : [Model] , belongsTo : [Model] }
    * } config
   */  
@@ -84,7 +85,7 @@ class Instance{
     this.params = params || {}; 
   }
 
-  _setSchema(schema={}){}
+  _setValidator(paramTypes={}){}
 
   _setRelations(relations={}){
     if(!!relations.hasMany) this.setHasMany(relations.hasMany);
@@ -125,7 +126,7 @@ class Instance{
 
   save(){
     let promise;
-    //TODO: validate params by schema
+    //TODO: validate params
     if(this.params.id && this.params){
       promise = this.client.hsetAsync(`${this.db}:${this.table}`, this.params.id, this.params)
     }else if(this.params){

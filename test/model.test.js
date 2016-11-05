@@ -9,7 +9,7 @@ console.log("=*=*=*=*=*=*=*= TEST =*=*=*=*=*=*=*=")
 describe("Model", () => {
   const config = {
     client : redis,
-    db : "redorm-test",
+    db : "redischema-test",
     table : "test"
   };
   const TestModel = new Model(config);
@@ -78,7 +78,7 @@ describe("Model", () => {
 
   after(() => {
     console.log("\n\nClearning test environment...");
-    return redis.keysAsync("*redorm-test*")
+    return redis.keysAsync("*redischema-test*")
     .then((keys) => {
       return redis.delAsync(keys);
     })

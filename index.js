@@ -1,2 +1,2 @@
-const Redorm = require("./dest");
-module.exports = Redorm;
+const Redischema = require("./dest");
+module.exports = Redischema;
