@@ -1,23 +1,14 @@
 import Promise from "bluebird"
 import pluralize from "pluralize"
 
-/**@param {Obejct} config
- * {
- *    client : RedisClient,
- *    db : dbName,
- *    table : tableName,
- *    schema : {
- *      columnName : { type : "number", }
- *    },
- *    relations : {
- *      hasMany : [],
- *      belongsTo : []
- *    }
- * }
- */
-
-
 export default class Model{
+  /**@param { 
+   *  client: string, 
+   *  db : string,
+   *  schema : { typeName : {} },
+   *  relations : { hasMany : [Model] , belongsTo : [Model] }
+   * } config
+  */  
   constructor(config){
     this.client = config.client;
     this.db = config.db;
