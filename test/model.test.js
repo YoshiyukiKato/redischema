@@ -1,16 +1,15 @@
 import Model from "../src/model"
 import assert from "power-assert"
-import Promise from "bluebird"
 import Redis from "redis"
 
-const redis = Promise.promisifyAll(Redis.createClient());
 console.log("=*=*=*=*=*=*=*= TEST =*=*=*=*=*=*=*=")
+
+const redis = Redis.createClient();
 
 describe("Model", () => {
   const config = {
     client : redis,
-    db : "redischema-test",
-    table : "test"
+    namespace : "redischema-test"
   };
   const TestModel = new Model(config);
  
@@ -32,10 +31,10 @@ describe("Model", () => {
       it("save params of an instance", () => {
         const params = { param1 : "foo", param2 : "bar" };
         const instance = TestModel.make(params);
-        instance.save()
+        return instance.save()
           .then(() => {
             assert(instance.params.id !== undefined);
-          });
+          })
       });
     });
   });
@@ -52,6 +51,7 @@ describe("Model", () => {
       .then((foundInstance) => {
         assert.deepEqual(foundInstance.params, instance.params);
       })
+      return promise;
     });
     
     it("find an instance by specific param", () => {
@@ -61,6 +61,7 @@ describe("Model", () => {
       .then((foundInstance) => {
         assert(foundInstance.params.param1 === params.param1);
       })
+      return promise;
     });
 
     it("find all instance by specific param", () => {
@@ -73,6 +74,7 @@ describe("Model", () => {
         }, true);
         assert(isFound);
       });
+      return promise;
     });
   });
 
@@ -82,6 +84,6 @@ describe("Model", () => {
     .then((keys) => {
       return redis.delAsync(keys);
     })
-    .then(() => { console.log("...done"); });
+    .then(() => { console.log("...done"); })
   });
 });

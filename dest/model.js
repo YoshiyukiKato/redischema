@@ -21,8 +21,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 var Model = function () {
   /**@param { 
    *  client: RedisClient,
-   *  db : string,
-   *  table : string, 
+   *  namespace : string, 
    *  paramTypes : { paramName : TypeValidator({constraints}) }, //TODO
    *  relations : { hasMany : [Model] , belongsTo : [Model] }
    * } config
@@ -31,9 +30,8 @@ var Model = function () {
   function Model(config) {
     _classCallCheck(this, Model);
 
-    this.client = config.client;
-    this.db = config.db;
-    this.table = config.table;
+    this.client = _bluebird2.default.promisifyAll(config.client);
+    this.namespace = config.namespace;
     this.config = config;
   }
 
@@ -48,7 +46,7 @@ var Model = function () {
     value: function find(id) {
       var _this = this;
 
-      var promise = this.client.hgetAsync(this.db + ":" + this.table, id).then(function (paramsJSON) {
+      var promise = this.client.hgetAsync(this.namespace, id).then(function (paramsJSON) {
         if (paramsJSON) return new Instance(_this.config, JSON.parse(paramsJSON));
         return null;
       });
@@ -59,7 +57,7 @@ var Model = function () {
     value: function findBy(column, value) {
       var _this2 = this;
 
-      var promise = this.client.hgetallAsync(this.db + ":" + this.table).then(function (hashMap) {
+      var promise = this.client.hgetallAsync(this.namespace).then(function (hashMap) {
         var ids = Object.keys(hashMap);
         var id = void 0,
             params = void 0;
@@ -85,7 +83,7 @@ var Model = function () {
     value: function where(condition) {
       var _this3 = this;
 
-      var promise = this.client.hgetallAsync(this.db + ":" + this.table).then(function (hashMap) {
+      var promise = this.client.hgetallAsync(this.namespace).then(function (hashMap) {
         var ids = Object.keys(hashMap);
         var instances = [];
         var id = void 0,
@@ -115,17 +113,16 @@ var Instance = function () {
     _classCallCheck(this, Instance);
 
     this.client = config.client;
-    this.db = config.db;
-    this.table = config.table;
-    if (config.paramTypes) this._setTypeValidator(config.paramTypes);
-    if (config.relations) this._setRelations(config.relations);
+    this.namespace = config.namespace;
+    if (!!config.paramTypes) this._setTypeValidator(config.paramTypes);
+    if (!!config.relations) this._setRelations(config.relations);
 
     this.params = params || {};
   }
 
   _createClass(Instance, [{
-    key: "_setValidator",
-    value: function _setValidator() {
+    key: "_setTypeValidator",
+    value: function _setTypeValidator() {
       var paramTypes = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
     }
   }, {
@@ -142,7 +139,7 @@ var Instance = function () {
       var _this4 = this;
 
       ChildList.forEach(function (Child) {
-        var childrenKey = _pluralize2.default.plural(Child.table);
+        var childrenKey = _pluralize2.default.plural(Child.namespace);
         _this4[childrenKey] = _this4._findChildren.bind(_this4, Child);
       });
     }
@@ -152,14 +149,14 @@ var Instance = function () {
       var _this5 = this;
 
       ParentList.forEach(function (Parent) {
-        var parentKey = Parent.table;
+        var parentKey = Parent.namespace;
         _this5[parentKey] = _this5._findParent.bind(_this5, Parent);
       });
     }
   }, {
     key: "_findChildren",
     value: function _findChildren(Child) {
-      var column = this.table + "_id";
+      var column = this.namespace + "_id";
       var value = this.params.id;
       var promise = Child.findAllBy(column, value);
       return promise;
@@ -167,7 +164,7 @@ var Instance = function () {
   }, {
     key: "_findParent",
     value: function _findParent(Parent) {
-      var column = Parent.table + "_id";
+      var column = Parent.namespace + "_id";
       var promise = Parent.find(this.params[column]);
       return promise;
     }
@@ -187,11 +184,11 @@ var Instance = function () {
       var promise = void 0;
       //TODO: validate params
       if (this.params.id && this.params) {
-        promise = this.client.hsetAsync(this.db + ":" + this.table, this.params.id, this.params);
+        promise = this.client.hsetAsync(this.namespace, this.params.id, this.params);
       } else if (this.params) {
-        promise = this.client.incrAsync("index@" + this.db + ":" + this.table).then(function (id) {
+        promise = this.client.incrAsync("index@" + this.namespace).then(function (id) {
           _this6.setParams({ id: id });
-          return _this6.client.hsetAsync(_this6.db + ":" + _this6.table, _this6.params.id, JSON.stringify(_this6.params));
+          return _this6.client.hsetAsync(_this6.namespace, _this6.params.id, JSON.stringify(_this6.params));
         });
       } else {
         promise = _bluebird2.default.reject("params is not defined");

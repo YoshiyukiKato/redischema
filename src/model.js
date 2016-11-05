@@ -4,17 +4,15 @@ import pluralize from "pluralize"
 export default class Model{
   /**@param { 
    *  client: RedisClient,
-   *  db : string,
-   *  table : string, 
+   *  namespace : string, 
    *  paramTypes : { paramName : TypeValidator({constraints}) }, //TODO
    *  relations : { hasMany : [Model] , belongsTo : [Model] }
    * } config
   */  
 
   constructor(config){
-    this.client = config.client;
-    this.db = config.db;
-    this.table = config.table;
+    this.client = Promise.promisifyAll(config.client);
+    this.namespace = config.namespace;
     this.config = config;
   }
 
@@ -24,7 +22,7 @@ export default class Model{
   }
   
   find(id) {
-    const promise = this.client.hgetAsync(`${this.db}:${this.table}`, id)
+    const promise = this.client.hgetAsync(this.namespace, id)
       .then((paramsJSON) => {
         if (paramsJSON) return new Instance(this.config, JSON.parse(paramsJSON));
         return null;
@@ -33,7 +31,7 @@ export default class Model{
   }
 
   findBy(column, value){
-    const promise = this.client.hgetallAsync(`${this.db}:${this.table}`)
+    const promise = this.client.hgetallAsync(this.namespace)
       .then((hashMap) => {
         const ids = Object.keys(hashMap);
         let id, params;
@@ -55,7 +53,7 @@ export default class Model{
   }
 
   where(condition){
-    const promise = this.client.hgetallAsync(`${this.db}:${this.table}`)
+    const promise = this.client.hgetallAsync(this.namespace)
       .then((hashMap) => {
         const ids = Object.keys(hashMap);
         const instances = [];
@@ -78,15 +76,14 @@ export default class Model{
 class Instance{
   constructor(config, params){
     this.client = config.client;
-    this.db = config.db;
-    this.table = config.table;
-    if(config.paramTypes) this._setTypeValidator(config.paramTypes);
-    if(config.relations) this._setRelations(config.relations);
+    this.namespace = config.namespace;
+    if(!!config.paramTypes) this._setTypeValidator(config.paramTypes);
+    if(!!config.relations) this._setRelations(config.relations);
  
     this.params = params || {}; 
   }
 
-  _setValidator(paramTypes={}){}
+  _setTypeValidator(paramTypes={}){}
 
   _setRelations(relations={}){
     if(!!relations.hasMany) this.setHasMany(relations.hasMany);
@@ -95,27 +92,27 @@ class Instance{
 
   _setHasMany(ChildList){
     ChildList.forEach((Child) => {
-      const childrenKey = pluralize.plural(Child.table); 
+      const childrenKey = pluralize.plural(Child.namespace); 
       this[childrenKey] = this._findChildren.bind(this, Child);
     });
   }
 
   _setBelongsTo(ParentList){
     ParentList.forEach((Parent) => {
-      const parentKey = Parent.table;
+      const parentKey = Parent.namespace;
       this[parentKey] = this._findParent.bind(this, Parent);
     });
   }
 
   _findChildren(Child){
-    const column = `${this.table}_id`;
+    const column = `${this.namespace}_id`;
     const value = this.params.id;
     const promise = Child.findAllBy(column, value)
     return promise;
   }
 
   _findParent(Parent){
-    const column = `${Parent.table}_id`;
+    const column = `${Parent.namespace}_id`;
     const promise = Parent.find(this.params[column]);
     return promise;
   }
@@ -129,12 +126,12 @@ class Instance{
     let promise;
     //TODO: validate params
     if(this.params.id && this.params){
-      promise = this.client.hsetAsync(`${this.db}:${this.table}`, this.params.id, this.params)
+      promise = this.client.hsetAsync(this.namespace, this.params.id, this.params)
     }else if(this.params){
-      promise = this.client.incrAsync(`index@${this.db}:${this.table}`)
+      promise = this.client.incrAsync(`index@${this.namespace}`)
         .then((id) => {
           this.setParams({ id : id });
-          return this.client.hsetAsync(`${this.db}:${this.table}`, this.params.id, JSON.stringify(this.params));
+          return this.client.hsetAsync(this.namespace, this.params.id, JSON.stringify(this.params));
         })
     }else{
       promise = Promise.reject("params is not defined");
