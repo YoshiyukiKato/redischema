@@ -43,7 +43,7 @@ export default class Model{
       });
     return promise;
   }
-
+ 
   findAllBy(column, value){
     const condition = function(column, value, params){
       return params[column] === value;
@@ -52,16 +52,21 @@ export default class Model{
     return promise;
   }
 
+  all(){
+    return this.where();
+  }
+
   where(condition){
     const promise = this.client.hgetallAsync(this.namespace)
       .then((hashMap) => {
         const ids = Object.keys(hashMap);
         const instances = [];
-        let id, params, instance;
+        let id, params, instance, isTarget;
         for(let i=0; i<ids.length; i++){
           id = ids[i];
           params = JSON.parse(hashMap[id]);
-          if(condition(params)){
+          isTarget = !!condition ? condition(params) : true;
+          if(isTarget){
             instance = new Instance(this.config, params);
             instances.push(instance);
           }

@@ -79,6 +79,11 @@ var Model = function () {
       return promise;
     }
   }, {
+    key: "all",
+    value: function all() {
+      return this.where();
+    }
+  }, {
     key: "where",
     value: function where(condition) {
       var _this3 = this;
@@ -88,11 +93,13 @@ var Model = function () {
         var instances = [];
         var id = void 0,
             params = void 0,
-            instance = void 0;
+            instance = void 0,
+            isTarget = void 0;
         for (var i = 0; i < ids.length; i++) {
           id = ids[i];
           params = JSON.parse(hashMap[id]);
-          if (condition(params)) {
+          isTarget = !!condition ? condition(params) : true;
+          if (isTarget) {
             instance = new Instance(_this3.config, params);
             instances.push(instance);
           }

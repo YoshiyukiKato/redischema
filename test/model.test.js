@@ -43,8 +43,8 @@ describe("Model", () => {
     const params = { param1 : "foo", param2 : "bar" };
     const instance = TestModel.make(params);
     let promise = instance.save();
-      
-    it("find instance by id", () => {
+    
+    it("find an instance by id", () => {
       promise = promise.then(() => {
         return TestModel.find(instance.params.id);
       })
@@ -64,6 +64,16 @@ describe("Model", () => {
       return promise;
     });
 
+    it("find all instance", () => {
+      promise = promise.then(() => {
+        return TestModel.all();
+      })
+      .then((foundInstances) => {
+        assert(foundInstances);
+      })
+      return promise;
+    });
+
     it("find all instance by specific param", () => {
       promise = promise.then(() => {
         return TestModel.findAllBy("param1", params.param1);
@@ -76,6 +86,22 @@ describe("Model", () => {
       });
       return promise;
     });
+ 
+    it("find all instance by custom condition", () => {
+      promise = promise.then(() => {
+        return TestModel.where((instanceParams) => {
+          return instanceParams.param1 === params.param1
+        });
+      })
+      .then((foundInstances) => {
+        const isFound = foundInstances.reduce((acc, foundInstance) => {
+          return acc && foundInstance.params.param1 === params.param1;
+        }, true);
+        assert(isFound);
+      })
+      return promise;
+    });
+
   });
 
   after(() => {
