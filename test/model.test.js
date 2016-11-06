@@ -39,11 +39,11 @@ describe("Model", () => {
     });
   });
 
-  describe("#find", () => {
+  describe("#find", () => { 
     const params = { param1 : "foo", param2 : "bar" };
     const instance = TestModel.make(params);
     let promise = instance.save();
-    
+
     it("find an instance by id", () => {
       promise = promise.then(() => {
         return TestModel.find(instance.params.id);
@@ -102,6 +102,26 @@ describe("Model", () => {
       return promise;
     });
 
+  });
+
+  describe("case of no instance in the namespace", () => {
+    const EmptyTestModel = new Model({
+      client : redis,
+      namespace : "redischema-noinstance-test"
+    });
+ 
+    it("Model.find returns null", () => {
+      return EmptyTestModel.find(1)
+      .then((response) => {
+        assert.equal(response, null);
+      });
+    });
+
+    it("Model.all returns null", () => {
+      return EmptyTestModel.all().then((response) => {
+        assert.equal(response, null);
+      });
+    });
   });
 
   after(() => {
