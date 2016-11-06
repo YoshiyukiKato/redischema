@@ -20,11 +20,11 @@
     "gulp": "^3.9.1",
     "gulp-babel": "^6.1.2",
     "mocha": "^3.1.2",
-    "power-assert": "^1.4.1"
+    "power-assert": "^1.4.1",
+    "redis": "^2.6.3"
   },
   "dependencies": {
     "bluebird": "^3.4.6",
-    "pluralize": "^3.0.0",
-    "redis": "^2.6.3"
+    "pluralize": "^3.0.0"
   }
 }
