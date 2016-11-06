@@ -58,6 +58,7 @@ var Model = function () {
       var _this2 = this;
 
       var promise = this.client.hgetallAsync(this.namespace).then(function (hashMap) {
+        if (!hashMap) return null;
         var ids = Object.keys(hashMap);
         var id = void 0,
             params = void 0;
@@ -89,8 +90,9 @@ var Model = function () {
       var _this3 = this;
 
       var promise = this.client.hgetallAsync(this.namespace).then(function (hashMap) {
-        var ids = Object.keys(hashMap);
+        if (!hashMap) return null;
         var instances = [];
+        var ids = Object.keys(hashMap);
         var id = void 0,
             params = void 0,
             instance = void 0,

@@ -33,6 +33,7 @@ export default class Model{
   findBy(column, value){
     const promise = this.client.hgetallAsync(this.namespace)
       .then((hashMap) => {
+        if(!hashMap) return null;
         const ids = Object.keys(hashMap);
         let id, params;
         for(let i=0; i<ids.length; i++){
@@ -59,8 +60,9 @@ export default class Model{
   where(condition){
     const promise = this.client.hgetallAsync(this.namespace)
       .then((hashMap) => {
-        const ids = Object.keys(hashMap);
+        if(!hashMap) return null;
         const instances = [];
+        const ids = Object.keys(hashMap);
         let id, params, instance, isTarget;
         for(let i=0; i<ids.length; i++){
           id = ids[i];
