@@ -1,10 +1,10 @@
 {
   "name": "redischema",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Simple data model for redis",
   "main": "index.js",
   "scripts": {
-    "test": "mocha --compilers js:babel-register test/*.test.js"
+    "test": "$(npm bin)/mocha --compilers js:babel-register test/*.test.js"
   },
   "author": "Yoshiyuki Kato",
   "license": "MIT",

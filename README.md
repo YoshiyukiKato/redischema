@@ -34,3 +34,8 @@ user.save().then(() => {
     age : Types.Number()
   }
 ```
+
+* add namespace management function
+ * up
+ * down
+ * exist

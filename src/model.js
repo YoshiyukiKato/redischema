@@ -133,7 +133,7 @@ class Instance{
     let promise;
     //TODO: validate params
     if(this.params.id && this.params){
-      promise = this.client.hsetAsync(this.namespace, this.params.id, this.params)
+      promise = this.client.hsetAsync(this.namespace, this.params.id, JSON.stringify(this.params))
     }else if(this.params){
       promise = this.client.incrAsync(`index@${this.namespace}`)
         .then((id) => {
