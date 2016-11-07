@@ -1,2 +1,3 @@
 import Model from "./model"
-export default { Model };
+import { Types } from "./param";
+export default { Model, Types }

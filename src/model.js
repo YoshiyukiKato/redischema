@@ -1,5 +1,6 @@
 import Promise from "bluebird"
 import pluralize from "pluralize"
+import { validateAsync } from "./param"
 
 export default class Model{
   /**@param { 
@@ -84,17 +85,21 @@ class Instance{
   constructor(config, params){
     this.client = config.client;
     this.namespace = config.namespace;
-    if(!!config.paramTypes) this._setTypeValidator(config.paramTypes);
-    if(!!config.relations) this._setRelations(config.relations);
- 
-    this.params = params || {}; 
+    this.setParamTypes(config.paramTypes);
+    this.setRelations(config.relations);
+    this.params = params || {};
   }
 
-  _setTypeValidator(paramTypes={}){}
+  setParamTypes(paramTypes={}){
+    this.paramTypes = this.paramTypes ? Obejct.assign(this.paramTypes, paramTypes) : paramTypes;
+    this.validateParams= validateAsync.bind(this, this.paramTypes);
+    return this;
+  }
 
-  _setRelations(relations={}){
+  setRelations(relations={}){
     if(!!relations.hasMany) this.setHasMany(relations.hasMany);
     if(!!relations.belongsTo) this.setBelongsTo(relations.belongsTo);
+    return this;
   }
 
   _setHasMany(ChildList){
@@ -129,20 +134,23 @@ class Instance{
     return this;
   }
 
+  _initId(){
+    return this.client.incrAsync(`index@${this.namespace}`)
+      .then((id) => {
+        this.setParams({ id: id });
+        return this;
+      });
+  }
+
   save(){
-    let promise;
-    //TODO: validate params
-    if(this.params.id && this.params){
-      promise = this.client.hsetAsync(this.namespace, this.params.id, JSON.stringify(this.params))
-    }else if(this.params){
-      promise = this.client.incrAsync(`index@${this.namespace}`)
-        .then((id) => {
-          this.setParams({ id : id });
-          return this.client.hsetAsync(this.namespace, this.params.id, JSON.stringify(this.params));
-        })
-    }else{
-      promise = Promise.reject("params is not defined");
-    }
-    return promise;
+    return this.validateParams(this.params)
+      .then((params) => {
+        this.params = params; //overwrite
+        if(!params.id) return this._initId();
+        else return this;
+      })
+      .then(() => {
+        return this.client.hsetAsync(this.namespace, this.params.id, JSON.stringify(this.params));
+      });
   }
 }

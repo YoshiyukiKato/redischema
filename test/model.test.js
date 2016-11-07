@@ -1,4 +1,5 @@
 import Model from "../src/model"
+import { Types, validate } from "../src/param"
 import assert from "power-assert"
 import Redis from "redis"
 
@@ -9,7 +10,7 @@ const redis = Redis.createClient();
 describe("Model", () => {
   const config = {
     client : redis,
-    namespace : "redischema-test"
+    namespace : "redischema-test",
   };
   const TestModel = new Model(config);
  
@@ -103,6 +104,35 @@ describe("Model", () => {
     });
 
   });
+
+  describe("case of with paramTypes", () => {
+    const TypedTestModel = new Model({
+      client : redis,
+      namespace : "redischema-typed-test",
+      paramTypes : {
+        name : Types.String({ notNull : true }),
+        age : Types.Number()
+      }
+    });
+ 
+    it("valid instance", () => {
+      const validInstance = TypedTestModel.make({ name : "taro", age : 24 });
+      validInstance.save().then((response) => {
+        assert(validInstance.params.id !== undefined);
+      });
+    });
+
+    it("error by invalid instance", () => {
+      const invalidInstance = TypedTestModel.make({ age : 24 });
+      return invalidInstance.save().then(() => {
+        assert(false, "expected error is not occured...");
+      })
+      .catch((err) => {
+        assert.throws(() => { throw err });
+      });
+    });
+  });
+
 
   describe("case of no instance in the namespace", () => {
     const EmptyTestModel = new Model({
