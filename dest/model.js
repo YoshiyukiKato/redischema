@@ -14,6 +14,8 @@ var _pluralize = require("pluralize");
 
 var _pluralize2 = _interopRequireDefault(_pluralize);
 
+var _param = require("./param");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -123,24 +125,28 @@ var Instance = function () {
 
     this.client = config.client;
     this.namespace = config.namespace;
-    if (!!config.paramTypes) this._setTypeValidator(config.paramTypes);
-    if (!!config.relations) this._setRelations(config.relations);
-
+    this.setParamTypes(config.paramTypes);
+    this.setRelations(config.relations);
     this.params = params || {};
   }
 
   _createClass(Instance, [{
-    key: "_setTypeValidator",
-    value: function _setTypeValidator() {
+    key: "setParamTypes",
+    value: function setParamTypes() {
       var paramTypes = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+      this.paramTypes = this.paramTypes ? Obejct.assign(this.paramTypes, paramTypes) : paramTypes;
+      this.validateParams = _param.validateAsync.bind(this, this.paramTypes);
+      return this;
     }
   }, {
-    key: "_setRelations",
-    value: function _setRelations() {
+    key: "setRelations",
+    value: function setRelations() {
       var relations = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
       if (!!relations.hasMany) this.setHasMany(relations.hasMany);
       if (!!relations.belongsTo) this.setBelongsTo(relations.belongsTo);
+      return this;
     }
   }, {
     key: "_setHasMany",
@@ -186,23 +192,26 @@ var Instance = function () {
       return this;
     }
   }, {
-    key: "save",
-    value: function save() {
+    key: "_initId",
+    value: function _initId() {
       var _this6 = this;
 
-      var promise = void 0;
-      //TODO: validate params
-      if (this.params.id && this.params) {
-        promise = this.client.hsetAsync(this.namespace, this.params.id, JSON.stringify(this.params));
-      } else if (this.params) {
-        promise = this.client.incrAsync("index@" + this.namespace).then(function (id) {
-          _this6.setParams({ id: id });
-          return _this6.client.hsetAsync(_this6.namespace, _this6.params.id, JSON.stringify(_this6.params));
-        });
-      } else {
-        promise = _bluebird2.default.reject("params is not defined");
-      }
-      return promise;
+      return this.client.incrAsync("index@" + this.namespace).then(function (id) {
+        _this6.setParams({ id: id });
+        return _this6;
+      });
+    }
+  }, {
+    key: "save",
+    value: function save() {
+      var _this7 = this;
+
+      return this.validateParams(this.params).then(function (params) {
+        _this7.params = params; //overwrite
+        if (!params.id) return _this7._initId();else return _this7;
+      }).then(function () {
+        return _this7.client.hsetAsync(_this7.namespace, _this7.params.id, JSON.stringify(_this7.params));
+      });
     }
   }]);
 
