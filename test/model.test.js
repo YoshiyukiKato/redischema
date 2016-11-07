@@ -156,7 +156,7 @@ describe("Model", () => {
 
   after(() => {
     console.log("\n\nClearning test environment...");
-    return redis.keysAsync("*redischema-test*")
+    return redis.keysAsync("*redischema*test*")
     .then((keys) => {
       return redis.delAsync(keys);
     })
