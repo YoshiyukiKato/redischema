@@ -13,7 +13,11 @@ import redis from "redis"
 
 const User = new Model({
   client : redis.createClient(),
-  namespace : "user"
+  namespace : "user",
+  paramTypes : {
+    name : Types.String({ notNull : true, defaultTo : "Gonbei" }),
+    age : Types.Number()
+  }
 });
 
 const user = User.make({ name : "Taro", age : 25 });
@@ -25,15 +29,6 @@ user.save().then(() => {
 ```
 
 ##TODO
-* add type validator
-
-```js
-//config
-  paramTypes : {
-    name : Types.String({ notNull : true, defaultTo : "Gonbei" }),
-    age : Types.Number()
-  }
-```
 
 * add namespace management function
  * up
