@@ -2,6 +2,10 @@
   "name": "redischema",
   "version": "0.1.0",
   "description": "Simple data model for redis",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YoshiyukiKato/redischema.git"
+  },
   "main": "index.js",
   "scripts": {
     "test": "$(npm bin)/mocha --compilers js:babel-register test/*.test.js"
